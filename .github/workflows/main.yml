@@ -1,56 +1,56 @@
 name: Compile and Run C++ TSP Tabu Search
 
 on:
-push:
-branches: [ "master" ] # ĐÃ SỬA: Chạy khi push lên nhánh "master"
+  push:
+    branches: [ "master" ]
 
 jobs:
-build_and_run:
-runs-on: ubuntu-latest
+  build_and_run:
+    runs-on: ubuntu-latest
 
-steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Bước 1: Chọn ngẫu nhiên file đầu vào
-  - name: Select random input file
-    id: random_selection
-    run: |
-      # Tìm file .tsp trong thư mục 'data'. Nếu không thấy, tìm ở thư mục gốc (.)
-      if [ -d "data" ]; then
-        SEARCH_DIR="data"
-      else
-        SEARCH_DIR="."
-      fi
-      
-      # Tìm và chọn ngẫu nhiên
-      SELECTED_FILE=$(find $SEARCH_DIR -name "*.tsp" | shuf -n 1)
-      
-      if [ -z "$SELECTED_FILE" ]; then
-        echo "::error::Không tìm thấy file .tsp nào!"
-        exit 1
-      fi
-      
-      echo "RANDOM_TSP_FILE=$SELECTED_FILE" >> $GITHUB_ENV
-      echo "✅ Đã chọn ngẫu nhiên file để chạy: $SELECTED_FILE"
+      # Bước 1: Chọn ngẫu nhiên file đầu vào
+      - name: Select random input file
+        id: random_selection
+        run: |
+          # Tìm file .tsp trong thư mục 'data'. Nếu không thấy, tìm ở thư mục gốc (.)
+          if [ -d "data" ]; then
+            SEARCH_DIR="data"
+          else
+            SEARCH_DIR="."
+          fi
+          
+          # Tìm và chọn ngẫu nhiên
+          SELECTED_FILE=$(find $SEARCH_DIR -name "*.tsp" | shuf -n 1)
+          
+          if [ -z "$SELECTED_FILE" ]; then
+            echo "::error::Không tìm thấy file .tsp nào!"
+            exit 1
+          fi
+          
+          echo "RANDOM_TSP_FILE=$SELECTED_FILE" >> $GITHUB_ENV
+          echo "✅ Đã chọn ngẫu nhiên file để chạy: $SELECTED_FILE"
 
-  # Bước 2: Biên dịch Code C++
-  - name: Compile the C++ program
-    run: |
-      # Biên dịch tất cả file .cpp
-      g++ *.cpp -o tsp_solver -std=c++17
-      
-  # Bước 3: Chạy Thuật Toán
-  - name: Run the TSP Tabu Search program
-    run: |
-      ./tsp_solver ${{ env.RANDOM_TSP_FILE }} > results.txt
-      echo "--- CHẠY VỚI FILE: ${{ env.RANDOM_TSP_FILE }} ---" >> results.txt
-      
-  # Bước 4: Lưu kết quả
-  - name: Upload results
-    uses: actions/upload-artifact@v4
-    with:
-      name: tsp-execution-results
-      path: |
-        results.txt
-        TS_LOG_*.txt
+      # Bước 2: Biên dịch Code C++
+      - name: Compile the C++ program
+        run: |
+          # Biên dịch tất cả file .cpp
+          g++ *.cpp -o tsp_solver -std=c++17
+          
+      # Bước 3: Chạy Thuật Toán
+      - name: Run the TSP Tabu Search program
+        run: |
+          ./tsp_solver ${{ env.RANDOM_TSP_FILE }} > results.txt
+          echo "--- CHẠY VỚI FILE: ${{ env.RANDOM_TSP_FILE }} ---" >> results.txt
+          
+      # Bước 4: Lưu kết quả
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tsp-execution-results
+          path: |
+            results.txt
+            TS_LOG_*.txt
