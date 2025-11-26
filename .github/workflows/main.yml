@@ -2,7 +2,7 @@ name: Compile and Run C++ TSP Tabu Search
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ] # Chạy khi push lên nhánh "master"
 
 jobs:
   build_and_run:
@@ -11,39 +11,50 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # Bước 1: Chọn ngẫu nhiên file đầu vào
+    
+      # Bước 1: Chọn ngẫu nhiên file đầu vào từ thư mục move1020/data
       - name: Select random input file
         id: random_selection
         run: |
-          # Tìm file .tsp trong thư mục 'data'. Nếu không thấy, tìm ở thư mục gốc (.)
-          if [ -d "data" ]; then
-            SEARCH_DIR="data"
-          else
-            SEARCH_DIR="."
+          # Cấu hình đường dẫn đúng theo ảnh bạn gửi: move1020/data
+          SEARCH_DIR="move1020/data"
+          
+          # Kiểm tra xem thư mục có tồn tại không để báo lỗi rõ ràng
+          if [ ! -d "$SEARCH_DIR" ]; then
+             echo "::error::Không tìm thấy thư mục '$SEARCH_DIR'. Hãy kiểm tra lại tên folder!"
+             exit 1
           fi
           
-          # Tìm và chọn ngẫu nhiên
-          SELECTED_FILE=$(find $SEARCH_DIR -name "*.tsp" | shuf -n 1)
+          # Tìm và chọn ngẫu nhiên 1 file .tsp
+          SELECTED_FILE=$(find "$SEARCH_DIR" -name "*.tsp" | shuf -n 1)
           
           if [ -z "$SELECTED_FILE" ]; then
-            echo "::error::Không tìm thấy file .tsp nào!"
+            echo "::error::Không tìm thấy file .tsp nào trong $SEARCH_DIR!"
             exit 1
           fi
           
           echo "RANDOM_TSP_FILE=$SELECTED_FILE" >> $GITHUB_ENV
           echo "✅ Đã chọn ngẫu nhiên file để chạy: $SELECTED_FILE"
-
-      # Bước 2: Biên dịch Code C++
+    
+      # Bước 2: Biên dịch Code C++ trong thư mục move1020
       - name: Compile the C++ program
         run: |
-          # Biên dịch tất cả file .cpp
-          g++ *.cpp -o tsp_solver -std=c++17
+          # Chỉ định rõ biên dịch các file .cpp nằm trong folder move1020
+          if ls move1020/*.cpp 1> /dev/null 2>&1; then
+            g++ move1020/*.cpp -o tsp_solver -std=c++17
+          else
+            echo "::error::Không tìm thấy file .cpp nào trong thư mục move1020!"
+            exit 1
+          fi
           
       # Bước 3: Chạy Thuật Toán
       - name: Run the TSP Tabu Search program
         run: |
-          ./tsp_solver ${{ env.RANDOM_TSP_FILE }} > results.txt
+          # Chạy file thực thi và truyền đường dẫn file data vào
+          ./tsp_solver "${{ env.RANDOM_TSP_FILE }}" > results.txt
+          
+          # Ghi chú thêm vào cuối file kết quả
+          echo "" >> results.txt
           echo "--- CHẠY VỚI FILE: ${{ env.RANDOM_TSP_FILE }} ---" >> results.txt
           
       # Bước 4: Lưu kết quả
